@@ -1,0 +1,5 @@
+{
+  "name": "SentenceFlow 句流",
+  "description": "An English syntactic analysis tool that breaks down sentences into their core components, analyzes clauses, and performs grammar checks using AI. Designed with a sleek, Fluent-inspired interface for a seamless user experience.",
+  "requestFramePermissions": []
+}
