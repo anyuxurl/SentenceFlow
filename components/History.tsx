@@ -11,7 +11,7 @@ interface HistoryProps {
 const History: React.FC<HistoryProps> = ({ history, onSelectItem, onRemoveItem, onClearHistory }) => {
   if (history.length === 0) {
     return (
-        <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm">
+        <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm font-chinese">
             暂无历史记录
         </div>
     );
@@ -20,10 +20,10 @@ const History: React.FC<HistoryProps> = ({ history, onSelectItem, onRemoveItem, 
   return (
     <div className="flex flex-col max-h-80">
       <div className="flex justify-between items-center px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-850">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">最近分析</span>
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider font-chinese">最近分析</span>
           <button
               onClick={onClearHistory}
-              className="text-xs text-slate-400 hover:text-red-500 transition-colors duration-200"
+              className="text-xs text-slate-400 hover:text-red-500 transition-colors duration-200 font-chinese"
           >
               清空
           </button>
@@ -36,8 +36,8 @@ const History: React.FC<HistoryProps> = ({ history, onSelectItem, onRemoveItem, 
               onClick={() => onSelectItem(item)}
           >
             <div className="flex-grow min-w-0 pr-4">
-                <p className="text-sm text-slate-700 dark:text-slate-300 truncate font-medium">{item.sentence}</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                <p className="text-sm text-slate-700 dark:text-slate-300 truncate font-medium font-serif">{item.sentence}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate font-chinese">
                     {item.result.components.length} 个成分 • {item.result.clauses.length} 个从句
                 </p>
             </div>

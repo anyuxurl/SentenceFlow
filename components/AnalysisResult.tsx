@@ -52,7 +52,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
   if (isInitialState) {
     return (
       <div className="text-center p-12 text-slate-400 dark:text-slate-500 transition-colors duration-300">
-        <p className="text-lg font-light">等待输入...</p>
+        <p className="text-lg font-light font-chinese">等待输入...</p>
       </div>
     );
   }
@@ -76,11 +76,11 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
           {analysisResult.components.map((c, index) => (
             <div key={index} className="relative group bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl p-4 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md hover:border-sky-300/40 dark:hover:border-sky-500/40 transition-all duration-300">
               <div className="absolute -top-3 left-3 z-10">
-                  <span className="inline-block px-2 py-0.5 rounded text-xs font-bold tracking-widest text-sky-700 dark:text-sky-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-sm group-hover:border-sky-200 dark:group-hover:border-sky-500/30 transition-colors">
+                  <span className="inline-block px-2 py-0.5 rounded text-xs font-bold font-chinese tracking-widest text-sky-700 dark:text-sky-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-sm group-hover:border-sky-200 dark:group-hover:border-sky-500/30 transition-colors">
                     {c.part}
                   </span>
               </div>
-              <p className="text-slate-800 dark:text-slate-100 text-lg font-medium leading-relaxed mt-1">
+              <p className="text-slate-800 dark:text-slate-100 text-lg font-serif font-medium leading-relaxed mt-1">
                 {c.text}
               </p>
             </div>
@@ -93,10 +93,10 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
           {analysisResult.clauses.map((c, index) => (
             <li key={index} className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-600/50">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                 <span className="font-bold text-slate-700 dark:text-slate-200 text-lg mr-2">"{c.text}"</span>
-                 <span className="text-xs font-bold tracking-wider text-sky-600 dark:text-sky-400 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-md self-start sm:self-auto mt-1 sm:mt-0 whitespace-nowrap">{c.type}</span>
+                 <span className="font-bold font-serif text-slate-700 dark:text-slate-200 text-lg mr-2">"{c.text}"</span>
+                 <span className="text-xs font-bold font-chinese tracking-wider text-sky-600 dark:text-sky-400 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-md self-start sm:self-auto mt-1 sm:mt-0 whitespace-nowrap">{c.type}</span>
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{c.explanation}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-chinese">{c.explanation}</p>
             </li>
           ))}
         </ul>
@@ -106,7 +106,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
         {analysisResult.grammarCheck.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-4 text-emerald-500 dark:text-emerald-400">
              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-2 opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            <p className="font-medium text-lg">完美！未发现语法问题。</p>
+            <p className="font-medium text-lg font-chinese">完美！未发现语法问题。</p>
           </div>
         ) : (
           <ul className="space-y-6">
@@ -114,15 +114,15 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
               <li key={index} className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/20">
                 <div className="grid sm:grid-cols-2 gap-4 mb-3">
                     <div>
-                        <span className="text-xs font-bold text-red-500 uppercase tracking-wider mb-1 block">原文</span>
-                        <p className="line-through text-slate-500 dark:text-slate-500 decoration-red-400/50">"{g.original}"</p>
+                        <span className="text-xs font-bold font-chinese text-red-500 uppercase tracking-wider mb-1 block">原文</span>
+                        <p className="line-through font-serif text-slate-500 dark:text-slate-500 decoration-red-400/50">"{g.original}"</p>
                     </div>
                     <div>
-                        <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-1 block">建议修改</span>
-                        <p className="text-slate-800 dark:text-slate-200 font-medium bg-emerald-100/50 dark:bg-emerald-900/20 px-2 py-0.5 rounded -ml-2 w-fit">"{g.correction}"</p>
+                        <span className="text-xs font-bold font-chinese text-emerald-500 uppercase tracking-wider mb-1 block">建议修改</span>
+                        <p className="text-slate-800 dark:text-slate-200 font-serif font-medium bg-emerald-100/50 dark:bg-emerald-900/20 px-2 py-0.5 rounded -ml-2 w-fit">"{g.correction}"</p>
                     </div>
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 border-t border-red-100 dark:border-red-900/20 pt-2 mt-2 flex items-start">
+                <p className="text-sm text-slate-600 dark:text-slate-400 font-chinese border-t border-red-100 dark:border-red-900/20 pt-2 mt-2 flex items-start">
                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 mt-0.5 text-slate-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                     {g.explanation}
                 </p>

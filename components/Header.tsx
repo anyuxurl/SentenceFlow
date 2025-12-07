@@ -18,14 +18,14 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
         
         <div className="flex flex-col">
             <div className="flex items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                <h1 className="text-xl md:text-2xl font-serif font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                 SentenceFlow
                 </h1>
-                 <span className="px-1.5 py-0.5 text-[10px] md:text-xs font-bold tracking-wide text-sky-600 dark:text-sky-300 bg-sky-50 dark:bg-sky-900/30 rounded-md border border-sky-100 dark:border-sky-800/50">
+                 <span className="px-2 py-0.5 text-[10px] md:text-xs font-chinese font-bold tracking-wide text-sky-600 dark:text-sky-300 bg-sky-50 dark:bg-sky-900/30 rounded-md border border-sky-100 dark:border-sky-800/50">
                   句流
                 </span>
             </div>
-            <p className="text-xs md:text-sm text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+            <p className="text-xs md:text-sm text-slate-400 dark:text-slate-500 font-medium mt-0.5 font-chinese">
                 AI 驱动的英语句法分析助手
             </p>
         </div>
