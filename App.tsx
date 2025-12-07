@@ -22,36 +22,25 @@ const App: React.FC = () => {
   const [isInitialState, setIsInitialState] = useState<boolean>(true);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   
-  // Theme state
-  const [isDark, setIsDark] = useState<boolean>(true);
-
-  // Initialize Theme
-  useEffect(() => {
-    // Check local storage or system preference
-    const savedTheme = localStorage.getItem('theme');
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
-        setIsDark(true);
-    } else {
-        setIsDark(false);
+  // Initialize theme state based on what's ALREADY in the DOM (handled by index.html script)
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof document !== 'undefined') {
+        return document.documentElement.classList.contains('dark');
     }
-  }, []);
-
-  // Update HTML class when theme changes
-  useEffect(() => {
-    if (isDark) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-    }
-  }, [isDark]);
+    return false;
+  });
 
   const toggleTheme = useCallback(() => {
-      setIsDark(prev => !prev);
-  }, []);
+      const newIsDark = !isDark;
+      setIsDark(newIsDark);
+      if (newIsDark) {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+      } else {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+      }
+  }, [isDark]);
 
   useEffect(() => {
     try {
@@ -84,7 +73,7 @@ const App: React.FC = () => {
     try {
       const result = await analyzeSentence(sentenceToAnalyze);
       setAnalysisResult(result);
-      // Add to history if it's a new sentence (case insensitive check optional, keeping exact for now)
+      // Add to history if it's a new sentence
       if (!history.some(item => item.sentence === sentenceToAnalyze)) {
         const newHistoryItem: HistoryItem = {
           id: Date.now().toString(),
@@ -135,10 +124,10 @@ const App: React.FC = () => {
     <div className={`min-h-screen font-sans transition-colors duration-300 ${isDark ? 'bg-slate-900 bg-grid-slate-700/[0.05] text-white' : 'bg-gray-50 bg-grid-slate-200/[0.5] text-slate-900'}`}>
        <style>{`
           .animate-fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           }
           @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
           }
           .bg-grid-slate-700\\\/\\[0\\.05\\] {
@@ -150,9 +139,9 @@ const App: React.FC = () => {
              background-size: 2rem 2rem;
           }
        `}</style>
-      <main className="container mx-auto py-6 md:py-10 max-w-4xl flex-grow flex flex-col">
+      <main className="container mx-auto py-6 md:py-12 max-w-4xl flex-grow flex flex-col">
         <Header isDark={isDark} toggleTheme={toggleTheme} />
-        <div className="mt-4 flex-grow">
+        <div className="mt-6 md:mt-8 flex-grow">
           <InputArea 
             sentence={sentence}
             onSentenceChange={setSentence}
@@ -166,7 +155,7 @@ const App: React.FC = () => {
           />
           <ProgressBar isLoading={isLoading} />
         </div>
-        <div className="mt-4">
+        <div className="mt-6">
           <AnalysisResult 
             analysisResult={analysisResult}
             isLoading={isLoading}
@@ -177,7 +166,7 @@ const App: React.FC = () => {
       </main>
       <footer className="text-center p-8 mt-auto text-xs md:text-sm text-slate-400 dark:text-slate-600 transition-colors duration-300">
         <div className="flex flex-col md:flex-row justify-center items-center gap-2">
-            <span>Powered by OpenAI</span>
+            <span className="font-medium">Powered by OpenAI</span>
             <span className="hidden md:inline">•</span>
             <span>
                 Designed & Developed by{' '}
@@ -185,7 +174,7 @@ const App: React.FC = () => {
                     href="https://134687.xyz" 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="font-medium text-slate-500 dark:text-slate-500 hover:text-sky-500 dark:hover:text-sky-400 transition-colors underline decoration-dotted underline-offset-4"
+                    className="font-medium text-slate-600 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors underline decoration-dotted underline-offset-4"
                 >
                     qeeryyu
                 </a>

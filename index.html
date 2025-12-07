@@ -5,12 +5,36 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SentenceFlow 句流</title>
+    
+    <!-- Theme Script: Prevent Flash of Incorrect Theme -->
+    <script>
+      (function() {
+        const savedTheme = localStorage.getItem('theme');
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
+
+    <!-- Google Fonts: Outfit (UI), Playfair Display (Headings), Noto Sans SC (Chinese/Content - Modern) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Outfit', 'sans-serif'],
+              serif: ['Playfair Display', 'serif'],
+              'chinese': ['Noto Sans SC', 'sans-serif'],
+            },
             colors: {
               slate: {
                 850: '#151e2e',
@@ -20,17 +44,18 @@
         }
       }
     </script>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0/"
-  }
-}
-</script>
+    <!-- Import map removed as we use native fetch for OpenAI now -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0/"
+      }
+    }
+    </script>
 </head>
-  <body class="bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
+  <body class="bg-gray-50 dark:bg-slate-900 transition-colors duration-300 font-sans antialiased selection:bg-sky-500/30">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
