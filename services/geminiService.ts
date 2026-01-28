@@ -1,80 +1,78 @@
+import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult } from '../types';
 
-// =================================================================
-// 配置区域 / CONFIGURATION AREA
-// 请在下方引号内填入您的 OpenAI API Key 和 代理地址 (如有)
-// =================================================================
-
-const OPENAI_API_KEY = "sk-L8Ye7NU2LEgQsMPv88199e17E39e476aA0010e0aF4C951Eb"; // 在这里填入您的 Key
-const OPENAI_BASE_URL = "https://oneapi.lzzxt.com/v1"; // 如果使用中转，请修改此地址
-
-// =================================================================
-
+/**
+ * Expert English syntactic analysis service powered by Gemini 3.
+ * Uses the system-provided API key for secure and reliable operation.
+ */
 export const analyzeSentence = async (sentence: string): Promise<AnalysisResult> => {
-    
-    // Safety check
-    if (OPENAI_API_KEY.startsWith("sk-xxxx")) {
-        console.warn("Please configure your OpenAI API Key in services/geminiService.ts");
-    }
-
-    const prompt = `
-    You are an expert English syntactic analysis tool designed for Chinese learners. Analyze the user's sentence and provide a detailed breakdown in JSON format.
-
-    Strictly adhere to this JSON structure:
-    {
-      "components": [
-        { "part": "Grammar part in Chinese (e.g. 主语, 谓语)", "text": "The text segment" }
-      ],
-      "clauses": [
-        { "type": "Clause type in Chinese (e.g. 定语从句)", "text": "The clause text", "explanation": "Brief explanation in Chinese" }
-      ],
-      "grammarCheck": [
-        { "original": "Error text", "correction": "Corrected text", "explanation": "Why it is wrong in Chinese" }
-      ]
-    }
-
-    Rules:
-    1. Descriptions must be in Chinese.
-    2. If no grammar errors are found, "grammarCheck" must be an empty array [].
-    3. Be precise with linguistic terminology.
-    
-    User Input: "${sentence}"
-    `;
+    // Initialize the Gemini API client using the environment variable
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     try {
-        const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "gpt-4o-mini", // 或者 gpt-3.5-turbo
-                messages: [
-                    { role: "system", content: "You are a helpful assistant that outputs JSON." },
-                    { role: "user", content: prompt }
-                ],
-                response_format: { type: "json_object" },
-                temperature: 0.3
-            })
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `Analyze this English sentence for a Chinese learner: "${sentence}"`,
+            config: {
+                systemInstruction: 'You are an expert English syntactic analysis tool. Provide a detailed breakdown in JSON format. All explanations and grammatical terms must be in Chinese.',
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        components: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    part: { type: Type.STRING, description: 'Grammar part in Chinese (e.g. 主语, 谓语)' },
+                                    text: { type: Type.STRING, description: 'The text segment' }
+                                },
+                                required: ['part', 'text']
+                            }
+                        },
+                        clauses: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    type: { type: Type.STRING, description: 'Clause type in Chinese (e.g. 定语从句)' },
+                                    text: { type: Type.STRING, description: 'The clause text' },
+                                    explanation: { type: Type.STRING, description: 'Brief explanation in Chinese' }
+                                },
+                                required: ['type', 'text', 'explanation']
+                            }
+                        },
+                        grammarCheck: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    original: { type: Type.STRING },
+                                    correction: { type: Type.STRING },
+                                    explanation: { type: Type.STRING, description: 'Why it is wrong in Chinese' }
+                                },
+                                required: ['original', 'correction', 'explanation']
+                            }
+                        }
+                    },
+                    required: ['components', 'clauses', 'grammarCheck']
+                },
+                temperature: 0.2,
+            }
         });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(`API Error: ${response.status} ${errorData.error?.message || response.statusText}`);
+        const textOutput = response.text;
+        if (!textOutput) {
+            throw new Error("The AI model returned an empty response. Please try a different sentence.");
         }
 
-        const data = await response.json();
-        const content = data.choices[0]?.message?.content;
-
-        if (!content) {
-            throw new Error("Empty response from AI");
-        }
-
-        return JSON.parse(content) as AnalysisResult;
+        return JSON.parse(textOutput) as AnalysisResult;
 
     } catch (error) {
-        console.error("Error analyzing sentence:", error);
-        throw error;
+        console.error("Syntactic Analysis Error:", error);
+        if (error instanceof Error) {
+            throw new Error(`Analysis failed: ${error.message}`);
+        }
+        throw new Error("An unexpected error occurred during sentence analysis.");
     }
 };

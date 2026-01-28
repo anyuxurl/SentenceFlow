@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SentenceFlow 句流</title>
+    <title>SentenceFlow 句流 | AI Syntactic Analysis</title>
     
     <!-- Theme Script: Prevent Flash of Incorrect Theme -->
     <script>
@@ -19,7 +19,7 @@
       })();
     </script>
 
-    <!-- Google Fonts: Outfit (UI), Playfair Display (Headings), Noto Sans SC (Chinese/Content - Modern) -->
+    <!-- Google Fonts: Modern & Artistic Pairings -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -36,26 +36,25 @@
               'chinese': ['Noto Sans SC', 'sans-serif'],
             },
             colors: {
-              slate: {
-                850: '#151e2e',
-              }
+              slate: { 850: '#151e2e', 950: '#0b111b' },
+              sky: { 500: '#0ea5e9', 600: '#0284c7' }
             }
           }
         }
       }
     </script>
-    <!-- Import map removed as we use native fetch for OpenAI now -->
     <script type="importmap">
     {
       "imports": {
         "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
         "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "react": "https://aistudiocdn.com/react@^19.2.0/"
+        "react": "https://aistudiocdn.com/react@^19.2.0/",
+        "@google/genai": "https://esm.run/@google/genai"
       }
     }
     </script>
 </head>
-  <body class="bg-gray-50 dark:bg-slate-900 transition-colors duration-300 font-sans antialiased selection:bg-sky-500/30">
+  <body class="bg-gray-50 dark:bg-slate-950 transition-colors duration-500 font-sans antialiased selection:bg-sky-500/30">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
