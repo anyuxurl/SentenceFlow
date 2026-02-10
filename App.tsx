@@ -3,7 +3,8 @@ import Header from './components/Header';
 import InputArea from './components/InputArea';
 import AnalysisResult from './components/AnalysisResult';
 import ProgressBar from './components/ProgressBar';
-import { analyzeSentence } from './services/geminiService';
+import SettingsModal from './components/SettingsModal';
+import { analyzeSentence, OpenAIConfig } from './services/geminiService';
 import { AnalysisResult as AnalysisResultType, HistoryItem } from './types';
 
 const sampleSentences = [
@@ -14,6 +15,20 @@ const sampleSentences = [
   "I have a dream that one day this nation will rise up and live out the true meaning of its creed."
 ];
 
+// --- 开发者配置区域 (Developer Configuration Area) ---
+// 请在此处填写您提供的内置 API Key / Please fill in your built-in API Key here
+const BUILT_IN_CONFIG: OpenAIConfig = {
+    apiKey: 'YOUR_API_KEY_HERE', // <--- REPLACE THIS WITH YOUR KEY
+    baseUrl: 'https://api.qnaigc.com/v1',
+    model: 'deepseek/deepseek-v3.2-251201'
+};
+
+const DEFAULT_CUSTOM_CONFIG: OpenAIConfig = {
+    apiKey: '',
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-4o-mini'
+};
+
 const App: React.FC = () => {
   const [sentence, setSentence] = useState<string>('');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResultType | null>(null);
@@ -22,12 +37,42 @@ const App: React.FC = () => {
   const [isInitialState, setIsInitialState] = useState<boolean>(true);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   
+  // Settings State
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [useCustomConfig, setUseCustomConfig] = useState<boolean>(false);
+  const [customApiConfig, setCustomApiConfig] = useState<OpenAIConfig>(DEFAULT_CUSTOM_CONFIG);
+
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof document !== 'undefined') {
         return document.documentElement.classList.contains('dark');
     }
     return false;
   });
+
+  // Load Settings from LocalStorage
+  useEffect(() => {
+    try {
+        const storedCustomConfig = localStorage.getItem('sentenceFlowCustomConfig');
+        const storedUseCustom = localStorage.getItem('sentenceFlowUseCustom');
+
+        if (storedCustomConfig) {
+            setCustomApiConfig({ ...DEFAULT_CUSTOM_CONFIG, ...JSON.parse(storedCustomConfig) });
+        }
+        if (storedUseCustom !== null) {
+            setUseCustomConfig(JSON.parse(storedUseCustom));
+        }
+    } catch (e) {
+        console.error("Failed to load config", e);
+    }
+  }, []);
+
+  const saveSettings = (useCustom: boolean, newConfig: OpenAIConfig) => {
+      setUseCustomConfig(useCustom);
+      setCustomApiConfig(newConfig);
+      
+      localStorage.setItem('sentenceFlowUseCustom', JSON.stringify(useCustom));
+      localStorage.setItem('sentenceFlowCustomConfig', JSON.stringify(newConfig));
+  };
 
   const toggleTheme = useCallback(() => {
       const newIsDark = !isDark;
@@ -52,13 +97,22 @@ const App: React.FC = () => {
   const performAnalysis = useCallback(async (sentenceToAnalyze: string) => {
     if (!sentenceToAnalyze.trim()) return;
 
+    // Determine which config to use
+    const activeConfig = useCustomConfig ? customApiConfig : BUILT_IN_CONFIG;
+
+    if (!activeConfig.apiKey || activeConfig.apiKey.includes('YOUR_BUILT_IN_KEY')) {
+        setIsSettingsOpen(true);
+        setError(useCustomConfig ? "请配置您的自定义 API Key" : "内置 API Key 未配置，请联系开发者或切换到自定义模式。");
+        return;
+    }
+
     setIsLoading(true);
     setError(null);
     setAnalysisResult(null);
     if (isInitialState) setIsInitialState(false);
     
     try {
-      const result = await analyzeSentence(sentenceToAnalyze);
+      const result = await analyzeSentence(sentenceToAnalyze, activeConfig);
       setAnalysisResult(result);
       
       setHistory(prev => {
@@ -74,7 +128,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isInitialState]);
+  }, [isInitialState, useCustomConfig, customApiConfig]);
 
   const handleAnalyze = useCallback(() => {
     performAnalysis(sentence);
@@ -90,15 +144,19 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col font-sans selection:bg-sky-500/20 transition-colors duration-700 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-gray-50 text-slate-900'}`}>
       <style>{`
-          .animate-fade-in { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+          .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
           @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
           }
       `}</style>
 
       <main className="container mx-auto py-8 md:py-16 max-w-5xl px-4 flex-grow flex flex-col">
-        <Header isDark={isDark} toggleTheme={toggleTheme} />
+        <Header 
+            isDark={isDark} 
+            toggleTheme={toggleTheme} 
+            onOpenSettings={() => setIsSettingsOpen(true)}
+        />
         
         <div className="mt-12 space-y-4">
           <InputArea 
@@ -131,12 +189,20 @@ const App: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-6 text-[10px] font-black tracking-widest uppercase font-sans">
-                <span>OpenAI Intelligence</span>
+                <span>Powered by OpenAI</span>
                 <span className="opacity-20">/</span>
                 <a href="https://134687.xyz" target="_blank" className="hover:text-sky-500 transition-colors underline decoration-dotted underline-offset-4">Developer qeeryyu</a>
             </div>
         </div>
       </footer>
+
+      <SettingsModal 
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        initialUseCustom={useCustomConfig}
+        initialCustomConfig={customApiConfig}
+        onSave={saveSettings}
+      />
     </div>
   );
 };

@@ -1,78 +1,85 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult } from '../types';
 
+export interface OpenAIConfig {
+    apiKey: string;
+    baseUrl: string;
+    model: string;
+}
+
 /**
- * Expert English syntactic analysis service powered by Gemini 3.
- * Uses the system-provided API key for secure and reliable operation.
+ * Expert English syntactic analysis service powered by OpenAI.
+ * Uses client-provided configuration for flexibility.
  */
-export const analyzeSentence = async (sentence: string): Promise<AnalysisResult> => {
-    // Initialize the Gemini API client using the environment variable
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+export const analyzeSentence = async (sentence: string, config: OpenAIConfig): Promise<AnalysisResult> => {
+    if (!config.apiKey) {
+        throw new Error("API Key 未配置。请点击右上角设置图标填写您的 OpenAI API Key。");
+    }
+
+    const systemPrompt = `You are an expert English syntactic analysis tool. 
+    Analyze the given English sentence for a Chinese learner.
+    
+    Return ONLY a raw JSON object (no markdown formatting, no code blocks) with the following structure:
+    {
+      "components": [
+        { "part": "Grammar part in Chinese (e.g. 主语, 谓语)", "text": "The text segment" }
+      ],
+      "clauses": [
+        { "type": "Clause type in Chinese (e.g. 定语从句)", "text": "The clause text", "explanation": "Brief explanation in Chinese" }
+      ],
+      "grammarCheck": [
+        { "original": "Original text", "correction": "Corrected text", "explanation": "Why it is wrong in Chinese" }
+      ]
+    }
+    
+    If there are no grammar errors, "grammarCheck" should be an empty array.
+    Ensure all explanations and grammatical terms are in Chinese.`;
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Analyze this English sentence for a Chinese learner: "${sentence}"`,
-            config: {
-                systemInstruction: 'You are an expert English syntactic analysis tool. Provide a detailed breakdown in JSON format. All explanations and grammatical terms must be in Chinese.',
-                responseMimeType: 'application/json',
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        components: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    part: { type: Type.STRING, description: 'Grammar part in Chinese (e.g. 主语, 谓语)' },
-                                    text: { type: Type.STRING, description: 'The text segment' }
-                                },
-                                required: ['part', 'text']
-                            }
-                        },
-                        clauses: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    type: { type: Type.STRING, description: 'Clause type in Chinese (e.g. 定语从句)' },
-                                    text: { type: Type.STRING, description: 'The clause text' },
-                                    explanation: { type: Type.STRING, description: 'Brief explanation in Chinese' }
-                                },
-                                required: ['type', 'text', 'explanation']
-                            }
-                        },
-                        grammarCheck: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    original: { type: Type.STRING },
-                                    correction: { type: Type.STRING },
-                                    explanation: { type: Type.STRING, description: 'Why it is wrong in Chinese' }
-                                },
-                                required: ['original', 'correction', 'explanation']
-                            }
-                        }
-                    },
-                    required: ['components', 'clauses', 'grammarCheck']
-                },
-                temperature: 0.2,
-            }
+        // Clean the base URL to ensure it doesn't end with a slash for consistent appending
+        const baseUrl = config.baseUrl.replace(/\/$/, "");
+        const endpoint = `${baseUrl}/chat/completions`;
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.apiKey}`
+            },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: `Analyze this English sentence: "${sentence}"` }
+                ],
+                // Enforce JSON object response format for reliability
+                response_format: { type: "json_object" },
+                temperature: 0.2
+            })
         });
 
-        const textOutput = response.text;
-        if (!textOutput) {
-            throw new Error("The AI model returned an empty response. Please try a different sentence.");
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            let errorMessage = `API 请求失败 (${response.status})`;
+            if (errorData && errorData.error && errorData.error.message) {
+                errorMessage += `: ${errorData.error.message}`;
+            }
+            throw new Error(errorMessage);
         }
 
-        return JSON.parse(textOutput) as AnalysisResult;
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+
+        if (!content) {
+            throw new Error("AI 模型返回了空响应。");
+        }
+
+        return JSON.parse(content) as AnalysisResult;
 
     } catch (error) {
         console.error("Syntactic Analysis Error:", error);
         if (error instanceof Error) {
-            throw new Error(`Analysis failed: ${error.message}`);
+            throw error; // Re-throw with our custom message or the original error
         }
-        throw new Error("An unexpected error occurred during sentence analysis.");
+        throw new Error("分析过程中发生未知错误。");
     }
 };
