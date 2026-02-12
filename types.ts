@@ -17,6 +17,7 @@ export interface GrammarError {
 }
 
 export interface AnalysisResult {
+  translation: string;
   components: SentenceComponent[];
   clauses: Clause[];
   grammarCheck: GrammarError[];

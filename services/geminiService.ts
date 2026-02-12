@@ -1,3 +1,4 @@
+
 import { AnalysisResult } from '../types';
 
 export interface OpenAIConfig {
@@ -20,6 +21,7 @@ export const analyzeSentence = async (sentence: string, config: OpenAIConfig): P
     
     Return ONLY a raw JSON object (no markdown formatting, no code blocks) with the following structure:
     {
+      "translation": "A fluent, natural, and accurate Chinese translation of the sentence",
       "components": [
         { "part": "Grammar part in Chinese (e.g. 主语, 谓语)", "text": "The text segment" }
       ],
@@ -32,10 +34,10 @@ export const analyzeSentence = async (sentence: string, config: OpenAIConfig): P
     }
     
     If there are no grammar errors, "grammarCheck" should be an empty array.
-    Ensure all explanations and grammatical terms are in Chinese.`;
+    Ensure all explanations and grammatical terms are in Chinese.
+    The translation should be polished and suitable for a language learner to understand the meaning deeply.`;
 
     try {
-        // Clean the base URL to ensure it doesn't end with a slash for consistent appending
         const baseUrl = config.baseUrl.replace(/\/$/, "");
         const endpoint = `${baseUrl}/chat/completions`;
 
@@ -51,7 +53,6 @@ export const analyzeSentence = async (sentence: string, config: OpenAIConfig): P
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: `Analyze this English sentence: "${sentence}"` }
                 ],
-                // Enforce JSON object response format for reliability
                 response_format: { type: "json_object" },
                 temperature: 0.2
             })
@@ -78,7 +79,7 @@ export const analyzeSentence = async (sentence: string, config: OpenAIConfig): P
     } catch (error) {
         console.error("Syntactic Analysis Error:", error);
         if (error instanceof Error) {
-            throw error; // Re-throw with our custom message or the original error
+            throw error;
         }
         throw new Error("分析过程中发生未知错误。");
     }
