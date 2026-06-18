@@ -1,20 +1,115 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# SentenceFlow句流
 
-# Run and deploy your AI Studio app
+一个基于 OpenAI API 的英语句子分析工具（SentenceFlow句流），可以帮助用户分析英语句子的语法结构、从句成分，并提供语法错误检查和改进建议。
 
-This contains everything you need to run your app locally.
+## 产品介绍
 
-View your app in AI Studio: https://ai.studio/apps/drive/1F5gGIqameZ4_y_zUv6EeXHmQdnchxEjE
+### 这是什么工具？
+这是一款专门为英语学习者和写作者设计的智能辅助工具。无论你是在准备英语考试、撰��英语文章，还是想提升英语写作水平，这个工具都能帮你快速找到问题所在。
 
-## Run Locally
+### 适合什么人使用？
+- 英语学习者：想要检查自己写的句子是否正确
+- 学生：准备英语考试，需要理解复杂句子结构
+- 职场人士：需要撰写英语邮件或文档
+- 教师：辅助教学，帮助学生理解句子结构
 
-**Prerequisites:**  Node.js
+### 为什么选择这个工具？
+- 即时反馈：输入句子后立即获得详细分析
+- 全面分析：不仅指出错误，还解释具体原因
+- 简单易用：清晰的界面设计，操作简单直观
+- AI 驱动：采用先进的 AI 技术，分析准确度高
+- 学习工具：通过分析反馈，逐步提升英语水平
 
+## 功能特点
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- 句子成分分析：识别句子中的主语、谓语、宾语等基本成分
+- 从句分析：检测并分析各类从句（名词性从句、定语从句、状语从句等）
+- 语法错误检查：自动检测语法错误并提供改进建议
+- 实时分析：快速获取 AI 分析结果
+- 友好的用户界面：简洁直观的操作体验
+
+## 技术栈
+
+- 前端框架：React 19
+- 开发语言：TypeScript
+- 构建工具：Vite 6
+- AI 接口：OpenAI API
+- 代码规范：ESLint
+
+## 快速开始
+
+### 环境要求
+
+- Node.js (推荐最新 LTS 版本)
+- pnpm 包管理器
+
+### 安装步骤
+
+1. 克隆项目到本地：
+   ```bash
+   git clone [项目地址]
+   cd English-Sentence-Check
+   ```
+
+2. 安装依赖：
+   ```bash
+   pnpm install
+   ```
+
+3. 配置环境变量：
+   创建 `.env` 文件并设置以下变量：
+   ```
+   VITE_OPENAI_API_KEY=你的OpenAI API密钥
+   VITE_OPENAI_API_MODEL=gpt-3.5-turbo
+   VITE_OPENAI_BASE_URL=https://api.openai.com/v1
+   ```
+
+4. 启动开发服务器：
+   ```bash
+   pnpm dev
+   ```
+
+5. 打开浏览器访问 `http://localhost:5173`
+
+### 构建部署
+
+执行以下命令构建项目：
+```bash
+pnpm build
+```
+
+构建后的文件将生成在 `dist` 目录中，可以部署到任何静态文件服务器。
+
+## 使用说明
+
+1. 在文本框中输入需要分析的英语句子
+2. 点击"分析句子"按钮
+3. 等待分析结果，结果将显示：
+   - 句子的基本成分
+   - 从句分析（如果有）
+   - 可能存在的语法错误和改进建议
+
+## 开发相关
+
+### 项目结构
+
+```
+src/
+  ├── App.tsx      # 主应用组件
+  ├── utils/
+  │   └── openai.ts # OpenAI API 调用封装
+  └── ...
+```
+
+### 开发命令
+
+- `pnpm dev` - 启动开发服务器
+- `pnpm build` - 构建生产版本
+- `pnpm lint` - 运行 ESLint 检查
+- `pnpm preview` - 预览构建版本
+
+## 注意事项
+
+- 使用前请确保已配置有效的 OpenAI API 密钥
+- API 调用可能产生费用，请注意控制使用频率
+- 建议使用较新版本的浏览器以获得最佳体验
