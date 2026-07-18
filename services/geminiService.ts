@@ -8,10 +8,11 @@ export interface OpenAIConfig {
 }
 
 /**
- * Expert English syntactic analysis service powered by OpenAI.
- * Uses client-provided configuration for flexibility.
+ * Core analysis routine against any OpenAI-compatible endpoint.
+ * Isomorphic: relies only on fetch/JSON, so it is reused both by the
+ * client (custom mode) and by the server-side proxy (api/analyze.ts).
  */
-export const analyzeSentence = async (sentence: string, config: OpenAIConfig): Promise<AnalysisResult> => {
+export const analyzeWithConfig = async (sentence: string, config: OpenAIConfig): Promise<AnalysisResult> => {
     if (!config.apiKey) {
         throw new Error("API Key 未配置。请点击右上角设置图标填写您的 OpenAI API Key。");
     }
@@ -83,4 +84,24 @@ export const analyzeSentence = async (sentence: string, config: OpenAIConfig): P
         }
         throw new Error("分析过程中发生未知错误。");
     }
+};
+
+/**
+ * Built-in ("默认线路") analysis. Routes through the server-side proxy at
+ * /api/analyze so the shared API key stays in the server environment and is
+ * never shipped to the browser.
+ */
+export const analyzeBuiltIn = async (sentence: string): Promise<AnalysisResult> => {
+    const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sentence })
+    });
+
+    if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `内置线路请求失败 (${res.status})`);
+    }
+
+    return res.json() as Promise<AnalysisResult>;
 };

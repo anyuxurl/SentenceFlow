@@ -4,7 +4,7 @@ import InputArea from './components/InputArea';
 import AnalysisResult from './components/AnalysisResult';
 import ProgressBar from './components/ProgressBar';
 import SettingsModal from './components/SettingsModal';
-import { analyzeSentence, OpenAIConfig } from './services/geminiService';
+import { analyzeWithConfig, analyzeBuiltIn, OpenAIConfig } from './services/geminiService';
 import { AnalysisResult as AnalysisResultType, HistoryItem } from './types';
 
 const sampleSentences = [
@@ -15,14 +15,7 @@ const sampleSentences = [
   "I have a dream that one day this nation will rise up and live out the true meaning of its creed."
 ];
 
-// --- 开发者配置区域 (Developer Configuration Area) ---
-// 请在此处填写您提供的内置 API Key / Please fill in your built-in API Key here
-const BUILT_IN_CONFIG: OpenAIConfig = {
-    apiKey: 'YOUR_API_KEY_HERE', // <--- REPLACE THIS WITH YOUR KEY
-    baseUrl: 'https://api.qnaigc.com/v1',
-    model: 'deepseek/deepseek-v3.2-251201'
-};
-
+// 内置线路的密钥保存在服务端环境变量中，由 /api/analyze 代理调用，前端不再持有。
 const DEFAULT_CUSTOM_CONFIG: OpenAIConfig = {
     apiKey: '',
     baseUrl: 'https://api.openai.com/v1',
@@ -97,12 +90,10 @@ const App: React.FC = () => {
   const performAnalysis = useCallback(async (sentenceToAnalyze: string) => {
     if (!sentenceToAnalyze.trim()) return;
 
-    // Determine which config to use
-    const activeConfig = useCustomConfig ? customApiConfig : BUILT_IN_CONFIG;
-
-    if (!activeConfig.apiKey || activeConfig.apiKey.includes('YOUR_BUILT_IN_KEY')) {
+    // 自定义模式需要用户自己的 Key；内置模式由服务端代理校验。
+    if (useCustomConfig && !customApiConfig.apiKey) {
         setIsSettingsOpen(true);
-        setError(useCustomConfig ? "请配置您的自定义 API Key" : "内置 API Key 未配置，请联系开发者或切换到自定义模式。");
+        setError("请配置您的自定义 API Key");
         return;
     }
 
@@ -112,7 +103,9 @@ const App: React.FC = () => {
     if (isInitialState) setIsInitialState(false);
     
     try {
-      const result = await analyzeSentence(sentenceToAnalyze, activeConfig);
+      const result = useCustomConfig
+        ? await analyzeWithConfig(sentenceToAnalyze, customApiConfig)
+        : await analyzeBuiltIn(sentenceToAnalyze);
       setAnalysisResult(result);
       
       setHistory(prev => {
