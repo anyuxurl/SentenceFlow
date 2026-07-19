@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import InputArea from './components/InputArea';
 import AnalysisResult from './components/AnalysisResult';
@@ -22,6 +22,9 @@ const DEFAULT_CUSTOM_CONFIG: OpenAIConfig = {
     model: 'gpt-4o-mini'
 };
 
+// 历史记录保留条数上限（持久化与内存中的裁剪共用同一常量）。
+const MAX_HISTORY = 20;
+
 const App: React.FC = () => {
   const [sentence, setSentence] = useState<string>('');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResultType | null>(null);
@@ -29,6 +32,12 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isInitialState, setIsInitialState] = useState<boolean>(true);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  // Cancels a still-running analysis when a new one starts (prevents a slow
+  // earlier response from overwriting a newer one), and remembers the last
+  // attempted sentence so the error "retry" button can re-run it.
+  const abortRef = useRef<AbortController | null>(null);
+  const lastSentenceRef = useRef<string>('');
   
   // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -84,7 +93,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('sentenceFlowHistory', JSON.stringify(history.slice(0, 20)));
+    localStorage.setItem('sentenceFlowHistory', JSON.stringify(history.slice(0, MAX_HISTORY)));
   }, [history]);
 
   const performAnalysis = useCallback(async (sentenceToAnalyze: string) => {
@@ -97,35 +106,53 @@ const App: React.FC = () => {
         return;
     }
 
+    // Supersede any in-flight request so its (possibly slower) response can't
+    // clobber this one, then track the new request for the next call to cancel.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    lastSentenceRef.current = sentenceToAnalyze;
+
     setIsLoading(true);
     setError(null);
     setAnalysisResult(null);
     if (isInitialState) setIsInitialState(false);
-    
+
     try {
       const result = useCustomConfig
-        ? await analyzeWithConfig(sentenceToAnalyze, customApiConfig)
-        : await analyzeBuiltIn(sentenceToAnalyze);
+        ? await analyzeWithConfig(sentenceToAnalyze, customApiConfig, { signal: controller.signal })
+        : await analyzeBuiltIn(sentenceToAnalyze, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       setAnalysisResult(result);
-      
+
       setHistory(prev => {
           const filtered = prev.filter(item => item.sentence !== sentenceToAnalyze);
           return [{
               id: Date.now().toString(),
               sentence: sentenceToAnalyze,
               result: result,
-          }, ...filtered].slice(0, 10);
+          }, ...filtered].slice(0, MAX_HISTORY);
       });
     } catch (err) {
+      // Ignore errors from a request we deliberately superseded.
+      if (controller.signal.aborted) return;
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
     } finally {
-      setIsLoading(false);
+      // Only the most recent request owns the loading state.
+      if (abortRef.current === controller) {
+        setIsLoading(false);
+        abortRef.current = null;
+      }
     }
   }, [isInitialState, useCustomConfig, customApiConfig]);
 
   const handleAnalyze = useCallback(() => {
     performAnalysis(sentence);
   }, [sentence, performAnalysis]);
+
+  const handleRetry = useCallback(() => {
+    if (lastSentenceRef.current) performAnalysis(lastSentenceRef.current);
+  }, [performAnalysis]);
 
   const handleTryRandom = useCallback(() => {
     if (isLoading) return;
@@ -166,11 +193,12 @@ const App: React.FC = () => {
           <ProgressBar isLoading={isLoading} />
         </div>
 
-        <AnalysisResult 
+        <AnalysisResult
           analysisResult={analysisResult}
           isLoading={isLoading}
           error={error}
           isInitialState={isInitialState}
+          onRetry={handleRetry}
         />
       </main>
 

@@ -8,6 +8,7 @@ interface AnalysisResultProps {
   isLoading: boolean;
   error: string | null;
   isInitialState: boolean;
+  onRetry: () => void;
 }
 
 const colorMap: Record<number, string> = {
@@ -29,7 +30,7 @@ const SkeletonCard = () => (
     </div>
 );
 
-const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoading, error, isInitialState }) => {
+const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoading, error, isInitialState, onRetry }) => {
   const [activeSegment, setActiveSegment] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -76,7 +77,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
         </div>
         <h3 className="text-rose-800 dark:text-rose-300 font-bold mb-1 font-chinese">分析异常</h3>
         <p className="text-rose-600 dark:text-rose-400 text-sm font-chinese">{error}</p>
-        <button onClick={() => window.location.reload()} className="mt-4 px-4 py-1.5 text-xs font-bold text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors">重新尝试</button>
+        <button onClick={onRetry} className="mt-4 px-4 py-1.5 text-xs font-bold text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors">重新尝试</button>
       </div>
     );
   }
