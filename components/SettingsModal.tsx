@@ -90,7 +90,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialU
         >
             <div ref={modalRef} className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transform transition-all scale-100">
                 <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
-                    <h3 id="settings-modal-title" className="text-lg font-bold text-slate-800 dark:text-slate-100 font-chinese">分析设置 / Settings</h3>
+                    <h3 id="settings-modal-title" className="text-lg font-bold text-slate-800 dark:text-slate-100 font-chinese">分析设置</h3>
                     <button onClick={onClose} aria-label="关闭设置" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -135,7 +135,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialU
                         <div className="space-y-5 animate-fade-in">
                             {/* API Host */}
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">API URL (Base URL)</label>
+                                <label className="text-xs font-bold tracking-wider text-slate-400 dark:text-slate-500 font-chinese">接口地址 (Base URL)</label>
                                 <input 
                                     type="text" 
                                     value={baseUrl}
@@ -148,7 +148,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialU
 
                             {/* API Key */}
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">API Key</label>
+                                <label className="text-xs font-bold tracking-wider text-slate-400 dark:text-slate-500 font-chinese">密钥 (API Key)</label>
                                 <input 
                                     type="password" 
                                     value={apiKey}
@@ -160,7 +160,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialU
 
                             {/* Model */}
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Model Name</label>
+                                <label className="text-xs font-bold tracking-wider text-slate-400 dark:text-slate-500 font-chinese">模型 (Model)</label>
                                 <input 
                                     type="text" 
                                     value={model}

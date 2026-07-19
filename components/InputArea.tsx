@@ -1,9 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { HistoryItem } from '../types';
 import History from './History';
 
 // navigator.platform is deprecated; derive the Mac hint from the UA string.
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.userAgent);
+
+// Grow the textarea with its content up to this height (px), then scroll.
+const MAX_TEXTAREA_HEIGHT = 320;
 
 interface InputAreaProps {
   sentence: string;
@@ -52,6 +55,14 @@ const InputArea: React.FC<InputAreaProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Auto-grow the textarea with its content (up to MAX_TEXTAREA_HEIGHT, then scroll).
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
+  }, [sentence]);
+
   const handleClearInput = () => {
     onSentenceChange('');
     textareaRef.current?.focus();
@@ -60,7 +71,7 @@ const InputArea: React.FC<InputAreaProps> = ({
   const hasContent = sentence.trim().length > 0;
 
   return (
-    <div ref={wrapperRef} className="w-full max-w-3xl mx-auto px-4 relative z-20">
+    <div ref={wrapperRef} className="w-full relative z-20">
       <div className="relative group bg-white dark:bg-slate-900/50 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-all duration-300 focus-within:ring-2 focus-within:ring-sky-500/20 focus-within:border-sky-500/50">
         
         <textarea
@@ -68,8 +79,8 @@ const InputArea: React.FC<InputAreaProps> = ({
           value={sentence}
           onChange={(e) => onSentenceChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type or paste an English sentence to deconstruct..."
-          className="w-full h-44 p-6 pt-10 pb-16 bg-transparent text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none resize-none text-xl leading-relaxed font-serif transition-colors"
+          placeholder="输入或粘贴一句英文，开始拆解…"
+          className="w-full min-h-[11rem] max-h-[20rem] overflow-y-auto p-6 pt-10 pb-16 bg-transparent text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none resize-none text-xl leading-relaxed font-serif transition-colors"
           disabled={isLoading}
         />
 
@@ -79,7 +90,7 @@ const InputArea: React.FC<InputAreaProps> = ({
              <button
                 onClick={handleClearInput}
                 className="p-1.5 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all"
-                title="Clear input"
+                title="清空输入"
              >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
              </button>
@@ -91,7 +102,7 @@ const InputArea: React.FC<InputAreaProps> = ({
                 ? 'text-sky-500 bg-sky-50 dark:bg-sky-900/20' 
                 : 'text-slate-300 hover:text-slate-600 dark:hover:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
-            title="Analysis history"
+            title="分析历史"
           >
              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </button>
@@ -99,8 +110,8 @@ const InputArea: React.FC<InputAreaProps> = ({
 
         {/* Input Metadata */}
         <div className="absolute top-4 left-6">
-            <span className="text-[10px] font-bold tracking-widest uppercase text-slate-300 dark:text-slate-700 font-sans">
-                Source Input
+            <span className="text-[10px] font-bold tracking-[0.2em] text-slate-300 dark:text-slate-700 font-chinese">
+                原文输入
             </span>
         </div>
 
@@ -116,7 +127,7 @@ const InputArea: React.FC<InputAreaProps> = ({
                     <span>随机示例</span>
                 </button>
                 <span className="text-[10px] text-slate-300 dark:text-slate-700 font-mono hidden sm:inline">
-                    {sentence.length} chars
+                    {sentence.length} 字
                 </span>
             </div>
 

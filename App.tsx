@@ -4,6 +4,7 @@ import InputArea from './components/InputArea';
 import AnalysisResult from './components/AnalysisResult';
 import ProgressBar from './components/ProgressBar';
 import SettingsModal from './components/SettingsModal';
+import { LogoMark } from './components/Logo';
 import { analyzeWithConfig, analyzeBuiltIn, OpenAIConfig } from './services/geminiService';
 import { AnalysisResult as AnalysisResultType, HistoryItem } from './types';
 
@@ -161,6 +162,12 @@ const App: React.FC = () => {
     performAnalysis(randomSentence);
   }, [isLoading, performAnalysis]);
 
+  const handleSelectSample = useCallback((sample: string) => {
+    if (isLoading) return;
+    setSentence(sample);
+    performAnalysis(sample);
+  }, [isLoading, performAnalysis]);
+
   return (
     <div className={`min-h-screen flex flex-col font-sans selection:bg-sky-500/20 transition-colors duration-700 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-gray-50 text-slate-900'}`}>
       <style>{`
@@ -171,7 +178,7 @@ const App: React.FC = () => {
           }
       `}</style>
 
-      <main className="container mx-auto py-8 md:py-16 max-w-5xl px-4 flex-grow flex flex-col">
+      <main className="container mx-auto py-8 md:py-16 max-w-4xl px-4 flex-grow flex flex-col">
         <Header 
             isDark={isDark} 
             toggleTheme={toggleTheme} 
@@ -199,20 +206,22 @@ const App: React.FC = () => {
           error={error}
           isInitialState={isInitialState}
           onRetry={handleRetry}
+          sampleSentences={sampleSentences}
+          onSelectSample={handleSelectSample}
         />
       </main>
 
       <footer className="py-12 px-6 border-t border-slate-100 dark:border-slate-900 mt-auto">
-        <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-slate-400 dark:text-slate-600">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-slate-400 dark:text-slate-600">
             <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-900 flex items-center justify-center font-bold text-xs">SF</div>
-                <p className="text-xs font-chinese tracking-widest font-medium uppercase">SentenceFlow 句流 &copy; 2024</p>
+                <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-500"><LogoMark className="w-4 h-4" /></div>
+                <p className="text-xs font-chinese tracking-widest font-medium uppercase">SentenceFlow 句流 &copy; {new Date().getFullYear()}</p>
             </div>
             
-            <div className="flex items-center gap-6 text-[10px] font-black tracking-widest uppercase font-sans">
-                <span>Powered by OpenAI</span>
+            <div className="flex items-center gap-6 text-[10px] font-black tracking-wider font-chinese">
+                <span>由 OpenAI 提供支持</span>
                 <span className="opacity-20">/</span>
-                <a href="https://134687.xyz" target="_blank" className="hover:text-sky-500 transition-colors underline decoration-dotted underline-offset-4">Developer qeeryyu</a>
+                <a href="https://134687.xyz" target="_blank" rel="noreferrer" className="hover:text-sky-500 transition-colors underline decoration-dotted underline-offset-4">开发者 qeeryyu</a>
             </div>
         </div>
       </footer>

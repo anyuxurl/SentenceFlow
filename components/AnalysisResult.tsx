@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { AnalysisResult as AnalysisResultType } from '../types';
 import ResultCard from './ResultCard';
+import EmptyState from './EmptyState';
 
 interface AnalysisResultProps {
   analysisResult: AnalysisResultType | null;
@@ -9,6 +10,8 @@ interface AnalysisResultProps {
   error: string | null;
   isInitialState: boolean;
   onRetry: () => void;
+  sampleSentences: string[];
+  onSelectSample: (sentence: string) => void;
 }
 
 const colorMap: Record<number, string> = {
@@ -30,7 +33,7 @@ const SkeletonCard = () => (
     </div>
 );
 
-const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoading, error, isInitialState, onRetry }) => {
+const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoading, error, isInitialState, onRetry, sampleSentences, onSelectSample }) => {
   const [activeSegment, setActiveSegment] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -44,15 +47,20 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
 
   if (isLoading) {
     return (
-        <div className="w-full max-w-3xl mx-auto px-4 space-y-6 mt-12 pb-20">
+        <div className="w-full space-y-6 mt-12 pb-20">
             <div className="text-center mb-8 space-y-3">
                 <div className="inline-block px-3 py-1 bg-sky-50 dark:bg-sky-900/30 rounded-full border border-sky-100 dark:border-sky-800">
-                    <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 tracking-widest uppercase animate-pulse">Synthesizing Flow</span>
+                    <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 tracking-[0.2em] font-chinese animate-pulse">深度解析中</span>
                 </div>
                 <h2 className="text-xl font-chinese font-medium text-slate-400">正在通过 AI 深度拆解句法结构...</h2>
             </div>
-            <div className="h-48 bg-white dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-[2rem] animate-pulse mb-8"></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="h-56 bg-white dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-[2rem] animate-pulse mb-8"></div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+                {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="h-24 bg-white dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-2xl animate-pulse"></div>
+                ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <SkeletonCard />
                 <SkeletonCard />
             </div>
@@ -61,12 +69,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
   }
 
   if (isInitialState) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-slate-300 dark:text-slate-700 transition-all duration-700 animate-fade-in">
-        <svg className="w-16 h-16 mb-6 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-        <p className="text-lg font-chinese font-light tracking-widest">请在上方输入一段文字以开启分析</p>
-      </div>
-    );
+    return <EmptyState sampleSentences={sampleSentences} onSelectSample={onSelectSample} />;
   }
 
   if (error) {
@@ -85,7 +88,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
   if (!analysisResult) return null;
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 space-y-8 mt-12 pb-24 animate-fade-in">
+    <div className="w-full space-y-8 mt-12 pb-24 animate-fade-in">
       
       {/* --- 核心解读区: 视觉拆解 + 句子翻译 --- */}
       <div className="relative overflow-hidden bg-white dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-xl shadow-slate-200/40 dark:shadow-none group">
@@ -96,10 +99,10 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-sky-500 rounded-full"></div>
-                    <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 dark:text-slate-500 uppercase">Syntactic Structure</span>
+                    <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 dark:text-slate-500 font-chinese">句法结构</span>
                 </div>
-                <div className="px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-800 text-[10px] text-slate-400 font-mono font-bold">
-                    {analysisResult.components.length} SEGMENTS
+                <div className="px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-800 text-[10px] text-slate-400 font-chinese font-bold">
+                    {analysisResult.components.length} 个成分
                 </div>
             </div>
 
@@ -130,14 +133,14 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
         <div className="p-8 md:p-10 pt-6 bg-slate-50/30 dark:bg-slate-800/20 relative">
             <div className="flex items-center gap-2 mb-6">
                 <div className="w-2 h-2 bg-rose-400 rounded-full opacity-60"></div>
-                <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 dark:text-slate-500 uppercase">Polished Translation</span>
+                <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 dark:text-slate-500 font-chinese">参考译文</span>
             </div>
 
             <div className="relative group/trans">
                 <button 
                     onClick={handleCopyTranslation}
                     className={`absolute -right-2 -top-2 p-2 rounded-xl transition-all duration-300 ${copied ? 'text-emerald-500 bg-emerald-50' : 'text-slate-300 opacity-0 group-hover/trans:opacity-100 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/30'}`}
-                    title="Copy translation"
+                    title="复制译文"
                 >
                     {copied ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>}
                 </button>
@@ -149,63 +152,62 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
         </div>
       </div>
 
-      {/* --- 分析详情板块: 字号全面提升优化 --- */}
+      {/* --- 成分精解: 整幅响应式网格 --- */}
+      <ResultCard title="成分精解" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {analysisResult.components.map((c, i) => (
+                  <div
+                      key={i}
+                      className={`p-5 rounded-2xl border transition-all duration-300 ${activeSegment === i ? 'bg-sky-50 border-sky-200 dark:bg-sky-900/20 dark:border-sky-500/30 scale-[1.02]' : 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-100/50 dark:border-slate-800'}`}
+                      onMouseEnter={() => setActiveSegment(i)}
+                      onMouseLeave={() => setActiveSegment(null)}
+                  >
+                      <div className="flex items-center gap-2 mb-3">
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ring-1 ${colorMap[i % 6]}`}>
+                              {c.part}
+                          </span>
+                      </div>
+                      {/* 提升英文单词的展示强度 */}
+                      <p className="text-lg md:text-xl text-slate-900 dark:text-slate-50 font-serif leading-relaxed">{c.text}</p>
+                  </div>
+              ))}
+          </div>
+      </ResultCard>
+
+      {/* --- 从句逻辑 | 语法反馈: 两栏; 无从句时语法占满整幅 --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        
-        {/* 成分精解 */}
-        <ResultCard title="成分精解" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}>
-            <div className="space-y-4">
-                {analysisResult.components.map((c, i) => (
-                    <div 
-                        key={i} 
-                        className={`p-5 rounded-2xl border transition-all duration-300 ${activeSegment === i ? 'bg-sky-50 border-sky-200 dark:bg-sky-900/20 dark:border-sky-500/30 scale-[1.02]' : 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-100/50 dark:border-slate-800'}`}
-                        onMouseEnter={() => setActiveSegment(i)}
-                        onMouseLeave={() => setActiveSegment(null)}
-                    >
-                        <div className="flex items-center gap-2 mb-3">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ring-1 ${colorMap[i % 6]}`}>
-                                {c.part}
-                            </span>
-                        </div>
-                        {/* 提升英文单词的展示强度 */}
-                        <p className="text-lg md:text-xl text-slate-900 dark:text-slate-50 font-serif leading-relaxed">{c.text}</p>
-                    </div>
-                ))}
-            </div>
-        </ResultCard>
-
-        <div className="space-y-8">
-            {/* 从句逻辑 */}
-            {analysisResult.clauses.length > 0 && (
-                <ResultCard title="从句逻辑" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}>
-                    <div className="space-y-8">
-                        {analysisResult.clauses.map((c, i) => (
-                            <div key={i} className="group flex gap-5">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 flex items-center justify-center text-sm font-black shadow-sm">{i+1}</div>
-                                <div className="flex-grow pt-1">
-                                    <h4 className="font-serif text-lg md:text-xl text-slate-900 dark:text-slate-50 mb-2 leading-snug">"{c.text}"</h4>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md uppercase tracking-widest font-bold border border-slate-200/50 dark:border-slate-700">
-                                            {c.type}
-                                        </span>
-                                    </div>
-                                    {/* 提升解释文本的可读性 */}
-                                    <p className="text-base text-slate-600 dark:text-slate-400 font-chinese leading-relaxed">
-                                        {c.explanation}
-                                    </p>
+        {/* 从句逻辑 */}
+        {analysisResult.clauses.length > 0 && (
+            <ResultCard title="从句逻辑" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}>
+                <div className="space-y-8">
+                    {analysisResult.clauses.map((c, i) => (
+                        <div key={i} className="group flex gap-5">
+                            <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 flex items-center justify-center text-sm font-black shadow-sm">{i+1}</div>
+                            <div className="flex-grow pt-1">
+                                <h4 className="font-serif text-lg md:text-xl text-slate-900 dark:text-slate-50 mb-2 leading-snug">"{c.text}"</h4>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md uppercase tracking-widest font-bold border border-slate-200/50 dark:border-slate-700">
+                                        {c.type}
+                                    </span>
                                 </div>
+                                {/* 提升解释文本的可读性 */}
+                                <p className="text-base text-slate-600 dark:text-slate-400 font-chinese leading-relaxed">
+                                    {c.explanation}
+                                </p>
                             </div>
-                        ))}
-                    </div>
-                </ResultCard>
-            )}
+                        </div>
+                    ))}
+                </div>
+            </ResultCard>
+        )}
 
-            {/* 语法反馈 */}
+        {/* 语法反馈 */}
+        <div className={analysisResult.clauses.length === 0 ? 'md:col-span-2' : ''}>
             <ResultCard title="语法反馈" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>
                 {analysisResult.grammarCheck.length === 0 ? (
                     <div className="flex flex-col items-center py-8 text-emerald-500/40">
                         <svg className="w-12 h-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <p className="font-chinese tracking-[0.3em] text-xs uppercase font-bold text-center">Perfect Sentence Structure</p>
+                        <p className="font-chinese tracking-[0.2em] text-xs font-bold text-center">未发现语法问题</p>
                     </div>
                 ) : (
                     <div className="space-y-6">
@@ -213,11 +215,11 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
                             <div key={i} className="bg-rose-50/40 dark:bg-rose-950/10 border border-rose-100/50 dark:border-rose-900/20 rounded-2xl p-6">
                                 <div className="grid grid-cols-1 gap-4 mb-5 pb-5 border-b border-rose-100/30 dark:border-rose-900/10">
                                     <div className="space-y-1">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-rose-400 mb-1 block">Original</span>
+                                        <span className="text-[10px] font-black tracking-[0.2em] text-rose-400 mb-1 block font-chinese">原句</span>
                                         <p className="font-serif text-base text-slate-400 line-through decoration-rose-300/50 leading-relaxed">{g.original}</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1 block">Refined</span>
+                                        <span className="text-[10px] font-black tracking-[0.2em] text-emerald-500 mb-1 block font-chinese">修正</span>
                                         <p className="font-serif text-lg text-slate-900 dark:text-slate-50 font-medium leading-relaxed">{g.correction}</p>
                                     </div>
                                 </div>

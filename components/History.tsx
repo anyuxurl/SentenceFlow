@@ -47,7 +47,7 @@ const History: React.FC<HistoryProps> = ({ history, onSelectItem, onRemoveItem, 
                   onRemoveItem(item.id);
               }}
               className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200"
-              aria-label="Remove"
+              aria-label="删除"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
