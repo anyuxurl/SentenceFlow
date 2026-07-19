@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { HistoryItem } from '../types';
 import History from './History';
 
+// navigator.platform is deprecated; derive the Mac hint from the UA string.
+const IS_MAC = typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.userAgent);
+
 interface InputAreaProps {
   sentence: string;
   onSentenceChange: (sentence: string) => void;
@@ -119,7 +122,7 @@ const InputArea: React.FC<InputAreaProps> = ({
 
             <div className="flex items-center gap-3">
                 <span className="hidden lg:inline text-[10px] text-slate-400 font-mono">
-                    {navigator.platform.includes('Mac') ? '⌘+Enter' : 'Ctrl+Enter'}
+                    {IS_MAC ? '⌘+Enter' : 'Ctrl+Enter'}
                 </span>
                 <button
                     onClick={onAnalyze}

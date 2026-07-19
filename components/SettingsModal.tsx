@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -14,11 +14,13 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialUseCustom, initialCustomConfig, onSave }) => {
     const [useCustom, setUseCustom] = useState(initialUseCustom);
-    
+
     // Custom settings state
     const [apiKey, setApiKey] = useState(initialCustomConfig.apiKey);
     const [baseUrl, setBaseUrl] = useState(initialCustomConfig.baseUrl);
     const [model, setModel] = useState(initialCustomConfig.model);
+
+    const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -29,6 +31,48 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialU
         }
     }, [isOpen, initialUseCustom, initialCustomConfig]);
 
+    // Accessibility: focus the dialog on open, restore focus on close, close on
+    // Escape, and trap Tab focus within the dialog while it is open.
+    useEffect(() => {
+        if (!isOpen) return;
+        const previouslyFocused = document.activeElement as HTMLElement | null;
+        const focusableSelector =
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+        const focusables = (): HTMLElement[] => {
+            const nodes = modalRef.current?.querySelectorAll<HTMLElement>(focusableSelector);
+            return nodes ? Array.from(nodes) : [];
+        };
+        focusables()[0]?.focus();
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                onClose();
+                return;
+            }
+            if (e.key === 'Tab') {
+                const items = focusables();
+                if (items.length === 0) return;
+                const first = items[0];
+                const last = items[items.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('keydown', onKeyDown);
+            previouslyFocused?.focus?.();
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     const handleSave = () => {
@@ -37,11 +81,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialU
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transform transition-all scale-100">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settings-modal-title"
+        >
+            <div ref={modalRef} className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transform transition-all scale-100">
                 <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 font-chinese">分析设置 / Settings</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                    <h3 id="settings-modal-title" className="text-lg font-bold text-slate-800 dark:text-slate-100 font-chinese">分析设置 / Settings</h3>
+                    <button onClick={onClose} aria-label="关闭设置" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
