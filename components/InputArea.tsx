@@ -34,6 +34,12 @@ const InputArea: React.FC<InputAreaProps> = ({
   const [showHistory, setShowHistory] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const historyToggleRef = useRef<HTMLButtonElement>(null);
+
+  const closeHistory = () => {
+    setShowHistory(false);
+    historyToggleRef.current?.focus();
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -54,6 +60,20 @@ const InputArea: React.FC<InputAreaProps> = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Escape closes the dropdown and hands focus back to the toggle, so a keyboard
+  // user is not stranded inside a panel they cannot dismiss.
+  useEffect(() => {
+    if (!showHistory) return;
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      setShowHistory(false);
+      historyToggleRef.current?.focus();
+    };
+    document.addEventListener('keydown', onEscape);
+    return () => document.removeEventListener('keydown', onEscape);
+  }, [showHistory]);
 
   // Auto-grow the textarea with its content (up to MAX_TEXTAREA_HEIGHT, then scroll).
   useLayoutEffect(() => {
@@ -79,6 +99,7 @@ const InputArea: React.FC<InputAreaProps> = ({
           value={sentence}
           onChange={(e) => onSentenceChange(e.target.value)}
           onKeyDown={handleKeyDown}
+          aria-label="英文句子输入"
           placeholder="输入或粘贴一句英文，开始拆解…"
           className="w-full min-h-[11rem] max-h-[20rem] overflow-y-auto p-6 pt-10 pb-16 bg-transparent text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none resize-none text-xl leading-relaxed font-serif transition-colors"
           disabled={isLoading}
@@ -96,13 +117,17 @@ const InputArea: React.FC<InputAreaProps> = ({
              </button>
           )}
           <button
+            ref={historyToggleRef}
             onClick={() => setShowHistory(!showHistory)}
+            aria-expanded={showHistory}
+            aria-controls="history-panel"
             className={`p-1.5 rounded-lg transition-all ${
-                showHistory 
-                ? 'text-sky-500 bg-sky-50 dark:bg-sky-900/20' 
+                showHistory
+                ? 'text-sky-500 bg-sky-50 dark:bg-sky-900/20'
                 : 'text-slate-300 hover:text-slate-600 dark:hover:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
             title="分析历史"
+            aria-label="分析历史"
           >
              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </button>
@@ -149,10 +174,10 @@ const InputArea: React.FC<InputAreaProps> = ({
 
         {/* Dropdown History Panel */}
         {showHistory && (
-            <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-fade-in z-30">
-                <History 
-                    history={history} 
-                    onSelectItem={(item) => { onSelectHistory(item); setShowHistory(false); }} 
+            <div id="history-panel" className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-fade-in z-30">
+                <History
+                    history={history}
+                    onSelectItem={(item) => { onSelectHistory(item); closeHistory(); }}
                     onRemoveItem={onRemoveHistory}
                     onClearHistory={onClearHistory}
                 />

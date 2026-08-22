@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnalysisResult as AnalysisResultType } from '../types';
 import ResultCard from './ResultCard';
 import EmptyState from './EmptyState';
@@ -34,35 +34,58 @@ const SkeletonCard = () => (
 );
 
 const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoading, error, isInitialState, onRetry, sampleSentences, onSelectSample }) => {
-  const [activeSegment, setActiveSegment] = useState<number | null>(null);
+  // Highlighting a component is driven by two independent inputs so it works on
+  // every device: `pinned` is set by click/tap/Enter and survives, `hovered` is
+  // a mouse-only preview. Hover alone (the previous behaviour) left the feature
+  // unusable on touch screens and unreachable by keyboard.
+  const [pinned, setPinned] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const activeSegment = pinned ?? hovered;
+
+  const togglePinned = (i: number) => setPinned((prev) => (prev === i ? null : i));
+
   const [copied, setCopied] = useState(false);
+  const copyResetRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (copyResetRef.current !== null) window.clearTimeout(copyResetRef.current);
+  }, []);
 
   const handleCopyTranslation = () => {
-    if (analysisResult?.translation) {
-      navigator.clipboard.writeText(analysisResult.translation);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    if (!analysisResult?.translation) return;
+    // Undefined on insecure origins (e.g. plain-http LAN access), where an
+    // unguarded call throws.
+    navigator.clipboard?.writeText(analysisResult.translation).then(
+      () => {
+        setCopied(true);
+        if (copyResetRef.current !== null) window.clearTimeout(copyResetRef.current);
+        copyResetRef.current = window.setTimeout(() => setCopied(false), 2000);
+      },
+      () => { /* clipboard blocked — leave the button in its idle state */ }
+    );
   };
 
   if (isLoading) {
     return (
-        <div className="w-full space-y-6 mt-12 pb-20">
+        <div className="w-full space-y-6 mt-12 pb-20" role="status" aria-live="polite">
             <div className="text-center mb-8 space-y-3">
                 <div className="inline-block px-3 py-1 bg-sky-50 dark:bg-sky-900/30 rounded-full border border-sky-100 dark:border-sky-800">
                     <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 tracking-[0.2em] font-chinese animate-pulse">深度解析中</span>
                 </div>
                 <h2 className="text-xl font-chinese font-medium text-slate-400">正在通过 AI 深度拆解句法结构...</h2>
             </div>
-            <div className="h-56 bg-white dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-[2rem] animate-pulse mb-8"></div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
-                {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-24 bg-white dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-2xl animate-pulse"></div>
-                ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SkeletonCard />
-                <SkeletonCard />
+            {/* Placeholder geometry only — nothing here is worth announcing. */}
+            <div aria-hidden="true">
+                <div className="h-56 bg-white dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-[2rem] animate-pulse mb-8"></div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-24 bg-white dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-2xl animate-pulse"></div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <SkeletonCard />
+                    <SkeletonCard />
+                </div>
             </div>
         </div>
     );
@@ -74,7 +97,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
 
   if (error) {
     return (
-      <div className="w-full max-w-2xl mx-auto mt-12 p-6 bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/20 rounded-3xl text-center animate-fade-in">
+      <div className="w-full max-w-2xl mx-auto mt-12 p-6 bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/20 rounded-3xl text-center animate-fade-in" role="alert">
         <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
         </div>
@@ -89,7 +112,14 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
 
   return (
     <div className="w-full space-y-8 mt-12 pb-24 animate-fade-in">
-      
+      {/* Closes the loop for screen readers: the loading region above is torn
+          down when results arrive, and removal alone is announced unreliably. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        分析完成，共 {analysisResult.components.length} 个成分、
+        {analysisResult.clauses.length} 个从句、
+        {analysisResult.grammarCheck.length} 处语法问题。
+      </p>
+
       {/* --- 核心解读区: 视觉拆解 + 句子翻译 --- */}
       <div className="relative overflow-hidden bg-white dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-xl shadow-slate-200/40 dark:shadow-none group">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-indigo-500 to-rose-400 opacity-50"></div>
@@ -108,14 +138,20 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
 
             <div className="flex flex-wrap gap-x-2 gap-y-4 text-2xl md:text-4xl font-serif leading-snug">
               {analysisResult.components.map((c, i) => (
-                <span 
-                    key={i} 
-                    onMouseEnter={() => setActiveSegment(i)}
-                    onMouseLeave={() => setActiveSegment(null)}
-                    className={`px-2 rounded-xl ring-1 transition-all duration-300 cursor-default ${activeSegment === i ? 'scale-110 z-10 shadow-lg shadow-sky-500/10' : ''} ${colorMap[i % 6]}`}
+                <button
+                    key={i}
+                    type="button"
+                    onClick={() => togglePinned(i)}
+                    onMouseEnter={() => setHovered(i)}
+                    onMouseLeave={() => setHovered(null)}
+                    onFocus={() => setHovered(i)}
+                    onBlur={() => setHovered(null)}
+                    aria-pressed={pinned === i}
+                    aria-label={`${c.text}，${c.part}`}
+                    className={`px-2 rounded-xl ring-1 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${activeSegment === i ? 'scale-110 z-10 shadow-lg shadow-sky-500/10' : ''} ${colorMap[i % 6]}`}
                 >
                   {c.text}
-                </span>
+                </button>
               ))}
             </div>
         </div>
@@ -156,11 +192,16 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
       <ResultCard title="成分精解" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {analysisResult.components.map((c, i) => (
-                  <div
+                  <button
                       key={i}
-                      className={`p-5 rounded-2xl border transition-all duration-300 ${activeSegment === i ? 'bg-sky-50 border-sky-200 dark:bg-sky-900/20 dark:border-sky-500/30 scale-[1.02]' : 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-100/50 dark:border-slate-800'}`}
-                      onMouseEnter={() => setActiveSegment(i)}
-                      onMouseLeave={() => setActiveSegment(null)}
+                      type="button"
+                      onClick={() => togglePinned(i)}
+                      onMouseEnter={() => setHovered(i)}
+                      onMouseLeave={() => setHovered(null)}
+                      onFocus={() => setHovered(i)}
+                      onBlur={() => setHovered(null)}
+                      aria-pressed={pinned === i}
+                      className={`text-left p-5 rounded-2xl border transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${activeSegment === i ? 'bg-sky-50 border-sky-200 dark:bg-sky-900/20 dark:border-sky-500/30 scale-[1.02]' : 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-100/50 dark:border-slate-800'}`}
                   >
                       <div className="flex items-center gap-2 mb-3">
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ring-1 ${colorMap[i % 6]}`}>
@@ -169,7 +210,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult, isLoadi
                       </div>
                       {/* 提升英文单词的展示强度 */}
                       <p className="text-lg md:text-xl text-slate-900 dark:text-slate-50 font-serif leading-relaxed">{c.text}</p>
-                  </div>
+                  </button>
               ))}
           </div>
       </ResultCard>

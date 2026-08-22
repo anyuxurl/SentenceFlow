@@ -30,24 +30,29 @@ const History: React.FC<HistoryProps> = ({ history, onSelectItem, onRemoveItem, 
       </div>
       <ul className="overflow-y-auto py-2">
         {history.map((item) => (
-          <li 
-              key={item.id} 
-              className="group flex justify-between items-center px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer"
-              onClick={() => onSelectItem(item)}
+          <li
+              key={item.id}
+              className="group flex justify-between items-center hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors duration-200"
           >
-            <div className="flex-grow min-w-0 pr-4">
+            {/* A real button, not a click handler on the <li>: the row is the
+                primary action and has to be reachable by keyboard. The delete
+                button is a sibling, not a child — nesting it would be invalid. */}
+            <button
+                type="button"
+                onClick={() => onSelectItem(item)}
+                className="flex-grow min-w-0 text-left pl-4 pr-4 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500"
+            >
                 <p className="text-sm text-slate-700 dark:text-slate-300 truncate font-medium font-serif">{item.sentence}</p>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate font-chinese">
                     {item.result.components.length} 个成分 • {item.result.clauses.length} 个从句
                 </p>
-            </div>
-            <button 
-              onClick={(e) => {
-                  e.stopPropagation();
-                  onRemoveItem(item.id);
-              }}
-              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200"
-              aria-label="删除"
+            </button>
+            <button
+              type="button"
+              onClick={() => onRemoveItem(item.id)}
+              // Revealed on focus as well as hover, or it is invisible to anyone tabbing.
+              className="flex-shrink-0 mr-4 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 transition-all duration-200"
+              aria-label={`删除历史记录：${item.sentence}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
