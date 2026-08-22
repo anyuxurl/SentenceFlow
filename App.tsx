@@ -168,6 +168,21 @@ const App: React.FC = () => {
     performAnalysis(sample);
   }, [isLoading, performAnalysis]);
 
+  const handleSelectHistory = useCallback((item: HistoryItem) => {
+    // Drop any in-flight analysis so its response can't overwrite the restored
+    // one. Since we clear abortRef here, performAnalysis's finally block will
+    // no longer own the loading state — reset it ourselves.
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsLoading(false);
+    // The error branch renders ahead of the result, so a lingering error would
+    // hide the item the user just picked.
+    setError(null);
+    setSentence(item.sentence);
+    setAnalysisResult(item.result);
+    setIsInitialState(false);
+  }, []);
+
   return (
     <div className={`min-h-screen flex flex-col font-sans selection:bg-sky-500/20 transition-colors duration-700 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-gray-50 text-slate-900'}`}>
       <style>{`
@@ -193,7 +208,7 @@ const App: React.FC = () => {
             onTryRandom={handleTryRandom}
             isLoading={isLoading}
             history={history}
-            onSelectHistory={(item) => { setSentence(item.sentence); setAnalysisResult(item.result); setIsInitialState(false); }}
+            onSelectHistory={handleSelectHistory}
             onRemoveHistory={(id) => setHistory(h => h.filter(x => x.id !== id))}
             onClearHistory={() => setHistory([])}
           />
