@@ -107,7 +107,7 @@ npm run build
 ├── App.tsx                # 主应用组件与状态管理
 ├── components/            # UI 组件（输入区、结果展示、设置弹窗、历史等）
 ├── services/
-│   ├── geminiService.ts   # OpenAI 兼容接口调用（含 JSON 解析与容错）
+│   ├── analysisService.ts # OpenAI 兼容接口调用（含 JSON 解析与容错）
 │   └── inputPolicy.ts     # 内置线路的输入约束（服务端与 dev 中间件共用）
 ├── api/
 │   └── analyze.ts         # Vercel Edge Function：内置线路的服务端代理
@@ -123,10 +123,22 @@ npm run build
 
 ```bash
 npm run dev        # 启动开发服务
+npm test           # 跑单元测试（vitest）
+npm run test:watch # 监听模式
 npm run typecheck  # 仅类型检查
 npm run build      # 类型检查 + 生产构建
 npm run preview    # 预览构建结果
 ```
+
+### 测试范围
+
+测试集中在纯函数上——它们是最容易被上游模型行为变化悄悄打破的部分：
+
+- `services/analysisService.test.ts`：AI 响应的解析与容错（代码围栏、前后废话、字段类型错误、字段缺失、输出截断）
+- `services/inputPolicy.test.ts`：内置线路的输入约束（含一条记录已知局限的用例：英文注入无法被形状检查拦截）
+- `components/ErrorBoundary.test.tsx`：错误边界（用 jsdom 真实挂载，因为错误边界只在客户端渲染时生效）
+
+`.github/workflows/ci.yml` 在 push 和 PR 时跑 typecheck + test + build。
 
 ---
 

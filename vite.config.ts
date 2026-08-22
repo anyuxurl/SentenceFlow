@@ -1,7 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import { analyzeWithConfig } from './services/geminiService';
+import { analyzeWithConfig } from './services/analysisService';
 import { checkSentence } from './services/inputPolicy';
 
 export default defineConfig(({ mode }) => {

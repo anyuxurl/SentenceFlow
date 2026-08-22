@@ -1,4 +1,4 @@
-import { analyzeWithConfig, AnalysisError, UpstreamError } from '../services/geminiService';
+import { analyzeWithConfig, AnalysisError, UpstreamError } from '../services/analysisService';
 import { checkSentence } from '../services/inputPolicy';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
