@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useImperativeHandle, forwardRef } from 'react';
 import { HistoryItem } from '../types';
 import History from './History';
 
@@ -20,21 +20,37 @@ interface InputAreaProps {
   onClearHistory: () => void;
 }
 
-const InputArea: React.FC<InputAreaProps> = ({ 
-  sentence, 
-  onSentenceChange, 
-  onAnalyze, 
-  onTryRandom, 
+/** Lets the parent move focus into the editor after filling it from elsewhere. */
+export interface InputAreaHandle {
+  focus: () => void;
+}
+
+const InputArea = forwardRef<InputAreaHandle, InputAreaProps>(({
+  sentence,
+  onSentenceChange,
+  onAnalyze,
+  onTryRandom,
   isLoading,
   history,
   onSelectHistory,
   onRemoveHistory,
   onClearHistory
-}) => {
+}, ref) => {
   const [showHistory, setShowHistory] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const historyToggleRef = useRef<HTMLButtonElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.focus();
+      // Caret to the end, so the user can keep typing rather than landing
+      // mid-sentence in text that was just inserted for them.
+      el.setSelectionRange(el.value.length, el.value.length);
+    }
+  }), []);
 
   const closeHistory = () => {
     setShowHistory(false);
@@ -186,6 +202,8 @@ const InputArea: React.FC<InputAreaProps> = ({
       </div>
     </div>
   );
-};
+});
+
+InputArea.displayName = 'InputArea';
 
 export default InputArea;
