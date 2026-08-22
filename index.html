@@ -6,6 +6,14 @@
     <meta name="theme-color" content="#0ea5e9" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SentenceFlow 句流 | AI 英语句法分析</title>
+    <meta name="description" content="输入一句英文，AI 帮你拆解主谓宾等句子成分、梳理从句结构、校对语法，并给出精准中文翻译。适合英语学习者、备考和写作检查。" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="SentenceFlow 句流 | AI 英语句法分析" />
+    <meta property="og:description" content="输入一句英文，AI 帮你拆解成分、梳理从句、校对语法，并给出精准中文翻译。" />
+    <meta property="og:image" content="/favicon.svg" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta name="twitter:card" content="summary" />
     
     <!-- Theme Script: Prevent Flash of Incorrect Theme -->
     <script>
@@ -20,10 +28,15 @@
       })();
     </script>
 
-    <!-- Google Fonts: Modern & Artistic Pairings -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Google Fonts, via Google's own China-accessible mirror (.cn). The
+         audience for this app is largely in mainland China, where
+         fonts.googleapis.com does not resolve — the original .com host meant
+         these never loaded for most users. If the mirror is unreachable the
+         font stacks in tailwind.config.js fall back to installed system faces
+         (PingFang SC / Microsoft YaHei), not to a generic sans. -->
+    <link rel="preconnect" href="https://fonts.googleapis.cn">
+    <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
+    <link href="https://fonts.googleapis.cn/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 </head>
   <body class="bg-gray-50 dark:bg-slate-950 transition-colors duration-500 font-sans antialiased selection:bg-sky-500/30">
     <div id="root"></div>

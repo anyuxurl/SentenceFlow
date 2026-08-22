@@ -9,10 +9,19 @@ export default {
   ],
   theme: {
     extend: {
+      // Every stack ends in installed system faces, so a blocked or retired
+      // font CDN degrades to a real typeface rather than the browser default.
       fontFamily: {
-        sans: ['Outfit', 'sans-serif'],
-        serif: ['Playfair Display', 'serif'],
-        chinese: ['Noto Sans SC', 'sans-serif'],
+        sans: ['Outfit', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        serif: ['Playfair Display', 'Georgia', 'Times New Roman', 'serif'],
+        chinese: [
+          'Noto Sans SC',
+          'PingFang SC',
+          'Hiragino Sans GB',
+          'Microsoft YaHei',
+          'Source Han Sans SC',
+          'sans-serif',
+        ],
       },
       colors: {
         slate: { 850: '#151e2e', 950: '#0b111b' },
