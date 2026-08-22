@@ -108,7 +108,7 @@ const MIN_FIELD_LIMIT = 500;
  * stray prose before/after it. Narrowing to the outermost braces is a no-op for
  * a clean pure-JSON response.
  */
-const extractJson = (raw: string): string => {
+export const extractJson = (raw: string): string => {
     let s = raw.trim();
     const fenced = s.match(/```(?:[a-zA-Z]+)?\s*\n?([\s\S]*?)```/);
     if (fenced) s = fenced[1].trim();
@@ -130,7 +130,7 @@ const extractJson = (raw: string): string => {
  * through `translation`. That matters only for the shared built-in route; it is
  * harmless in custom mode.
  */
-const normalizeResult = (raw: unknown, fieldLimit: number): AnalysisResult => {
+export const normalizeResult = (raw: unknown, fieldLimit: number): AnalysisResult => {
     const obj = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
     const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v.slice(0, MAX_ENTRIES) : []);
     const at = (item: unknown, key: string): string =>
@@ -195,8 +195,17 @@ export const analyzeWithConfig = async (sentence: string, config: OpenAIConfig, 
 
     try {
         let response = await callChat(true);
+        // Not every OpenAI-compatible endpoint accepts response_format, so a 400
+        // may just mean "drop it and try again". Skip the retry only when the
+        // endpoint told us it objected to something else (wrong model name, bad
+        // body) — retrying those is a guaranteed second failure. An empty or
+        // unreadable body is treated as "reason unknown", so the retry still
+        // happens and endpoints that were working keep working.
         if (response.status === 400) {
-            response = await callChat(false);
+            const body = await response.clone().text().catch(() => '');
+            if (!body.trim() || /response_format|json_object|json/i.test(body)) {
+                response = await callChat(false);
+            }
         }
 
         if (!response.ok) {

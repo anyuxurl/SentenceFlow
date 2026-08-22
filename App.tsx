@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Header from './components/Header';
-import InputArea from './components/InputArea';
+import InputArea, { InputAreaHandle } from './components/InputArea';
 import AnalysisResult from './components/AnalysisResult';
 import ProgressBar from './components/ProgressBar';
 import SettingsModal from './components/SettingsModal';
 import { LogoMark } from './components/Logo';
-import { analyzeWithConfig, analyzeBuiltIn, OpenAIConfig } from './services/geminiService';
+import { analyzeWithConfig, analyzeBuiltIn, OpenAIConfig } from './services/analysisService';
 import { AnalysisResult as AnalysisResultType, HistoryItem } from './types';
 
 const sampleSentences = [
@@ -26,6 +26,18 @@ const DEFAULT_CUSTOM_CONFIG: OpenAIConfig = {
 // 历史记录保留条数上限（持久化与内存中的裁剪共用同一常量）。
 const MAX_HISTORY = 20;
 
+// Reads are already guarded; writes were not. setItem throws in Safari private
+// mode and when the origin is over quota, which would take down settings-saving
+// and every history mutation with it. Persistence is a nicety here — losing it
+// must not break the session.
+const persist = (key: string, value: unknown) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.error(`Failed to persist ${key}`, e);
+  }
+};
+
 const App: React.FC = () => {
   const [sentence, setSentence] = useState<string>('');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResultType | null>(null);
@@ -39,6 +51,8 @@ const App: React.FC = () => {
   // attempted sentence so the error "retry" button can re-run it.
   const abortRef = useRef<AbortController | null>(null);
   const lastSentenceRef = useRef<string>('');
+  const hasLoadedHistory = useRef(false);
+  const inputRef = useRef<InputAreaHandle>(null);
   
   // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -72,17 +86,41 @@ const App: React.FC = () => {
   const saveSettings = (useCustom: boolean, newConfig: OpenAIConfig) => {
       setUseCustomConfig(useCustom);
       setCustomApiConfig(newConfig);
-      
-      localStorage.setItem('sentenceFlowUseCustom', JSON.stringify(useCustom));
-      localStorage.setItem('sentenceFlowCustomConfig', JSON.stringify(newConfig));
+
+      persist('sentenceFlowUseCustom', useCustom);
+      persist('sentenceFlowCustomConfig', newConfig);
   };
 
   const toggleTheme = useCallback(() => {
       const newIsDark = !isDark;
       setIsDark(newIsDark);
       document.documentElement.classList.toggle('dark', newIsDark);
-      localStorage.setItem('theme', newIsDark ? 'dark' : 'light');
+      try {
+        localStorage.setItem('theme', newIsDark ? 'dark' : 'light');
+      } catch (e) {
+        console.error('Failed to persist theme', e);
+      }
   }, [isDark]);
+
+  // Follow the OS theme until the user expresses a preference of their own.
+  // Without this, a visitor who never touched the toggle stayed on whatever the
+  // OS reported at load time, even after the OS switched (e.g. at sunset).
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = (e: MediaQueryListEvent) => {
+      let hasChosen = false;
+      try {
+        hasChosen = localStorage.getItem('theme') !== null;
+      } catch {
+        /* storage unavailable — treat as no stored preference */
+      }
+      if (hasChosen) return;
+      setIsDark(e.matches);
+      document.documentElement.classList.toggle('dark', e.matches);
+    };
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     try {
@@ -90,11 +128,18 @@ const App: React.FC = () => {
       if (storedHistory) setHistory(JSON.parse(storedHistory));
     } catch (e) {
       console.error("Failed to load history", e);
+    } finally {
+      hasLoadedHistory.current = true;
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('sentenceFlowHistory', JSON.stringify(history.slice(0, MAX_HISTORY)));
+    // Effects run in declaration order, so on mount this would fire with the
+    // initial [] and clobber stored history before the loader above has put it
+    // into state. Harmless in the happy path (the next run restores it), but it
+    // means a crash or a tab closed mid-mount loses everything.
+    if (!hasLoadedHistory.current) return;
+    persist('sentenceFlowHistory', history.slice(0, MAX_HISTORY));
   }, [history]);
 
   const performAnalysis = useCallback(async (sentenceToAnalyze: string) => {
@@ -164,9 +209,12 @@ const App: React.FC = () => {
 
   const handleSelectSample = useCallback((sample: string) => {
     if (isLoading) return;
+    // Fill and focus rather than analyzing straight away: a mis-tap should not
+    // silently spend a request against the shared quota, and the user may want
+    // to edit the example before running it.
     setSentence(sample);
-    performAnalysis(sample);
-  }, [isLoading, performAnalysis]);
+    inputRef.current?.focus();
+  }, [isLoading]);
 
   const handleSelectHistory = useCallback((item: HistoryItem) => {
     // Drop any in-flight analysis so its response can't overwrite the restored
@@ -185,14 +233,6 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen flex flex-col font-sans selection:bg-sky-500/20 transition-colors duration-700 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-gray-50 text-slate-900'}`}>
-      <style>{`
-          .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-      `}</style>
-
       <main className="container mx-auto py-8 md:py-16 max-w-4xl px-4 flex-grow flex flex-col">
         <Header 
             isDark={isDark} 
@@ -201,7 +241,8 @@ const App: React.FC = () => {
         />
         
         <div className="mt-12 space-y-4">
-          <InputArea 
+          <InputArea
+            ref={inputRef}
             sentence={sentence}
             onSentenceChange={setSentence}
             onAnalyze={handleAnalyze}
