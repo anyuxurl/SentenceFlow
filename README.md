@@ -74,7 +74,10 @@ SentenceFlow 帮你快速理解英文句子的语法构成。无论是在学习�
    npm run dev
    ```
 
-   打开浏览器访问 `http://localhost:5173`
+   打开浏览器访问 `http://localhost:3000`
+
+   > 开发服务器只绑定 localhost。内置线路的 dev 中间件会用真实的 `BUILTIN_API_KEY`
+   > 且不限流，所以默认不对局域网开放；需要用手机调试时再加 `npm run dev -- --host`。
 
 ### 构建
 
@@ -82,7 +85,7 @@ SentenceFlow 帮你快速理解英文句子的语法构成。无论是在学习�
 npm run build
 ```
 
-生成的文件在 `dist` 目录中，可以部署到任何静态文件服务。
+构建前会先跑 `tsc --noEmit` 做类型检查，类型不过则不会产出。生成的文件在 `dist` 目录中，可以部署到任何静态文件服务。
 
 ---
 
@@ -104,7 +107,8 @@ npm run build
 ├── App.tsx                # 主应用组件与状态管理
 ├── components/            # UI 组件（输入区、结果展示、设置弹窗、历史等）
 ├── services/
-│   └── geminiService.ts   # OpenAI 兼容接口调用（含 JSON 解析与容错）
+│   ├── geminiService.ts   # OpenAI 兼容接口调用（含 JSON 解析与容错）
+│   └── inputPolicy.ts     # 内置线路的输入约束（服务端与 dev 中间件共用）
 ├── api/
 │   └── analyze.ts         # Vercel Edge Function：内置线路的服务端代理
 ├── types.ts               # 共享类型定义
@@ -118,9 +122,10 @@ npm run build
 ### 可用命令
 
 ```bash
-npm run dev      # 启动开发服务
-npm run build    # 生产构建
-npm run preview  # 预览构建结果
+npm run dev        # 启动开发服务
+npm run typecheck  # 仅类型检查
+npm run build      # 类型检查 + 生产构建
+npm run preview    # 预览构建结果
 ```
 
 ---
@@ -138,7 +143,10 @@ npm run preview  # 预览构建结果
 
 - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`：在 [Upstash](https://upstash.com) 免费创建 Redis 后填入，启用按 IP 限流。
 - `RATELIMIT_REQUESTS`：每个 IP 在 10 分钟内允许的请求数，默认 30。
+- `DAILY_BUDGET`：整个部署每天的内置线路请求总数上限，默认 500。按 IP 限流可以靠换 IP 绕开，这一项是账单兜底；超出后提示用户改用自己的 Key。
 - `ALLOWED_ORIGINS`：额外允许的来源（逗号分隔）；同源请求始终放行，通常留空。
+
+此外内置线路对输入有约束（自定义线路不受影响，那是你自己的 Key）：单次最多 400 字符、最多 3 行、且必须看起来是英文。上游返回的错误只写进服务端日志，浏览器只收到通用提示——provider 的 401/403 报错里经常带 Key 前缀和账号信息。
 
 ---
 

@@ -2,13 +2,18 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { analyzeWithConfig } from './services/geminiService';
+import { checkSentence } from './services/inputPolicy';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       server: {
         port: 3000,
-        host: '0.0.0.0',
+        // Deliberately NOT 0.0.0.0: the dev middleware below spends the real
+        // BUILTIN_API_KEY with no rate limit, so binding to every interface
+        // hands the whole LAN a free proxy. Opt in per-session when you need
+        // to test from a phone: `npm run dev -- --host`.
+        host: 'localhost',
       },
       plugins: [
         react(),
@@ -22,19 +27,26 @@ export default defineConfig(({ mode }) => {
               if (req.method !== 'POST') { res.statusCode = 405; return res.end(); }
               let body = '';
               for await (const chunk of req) body += chunk;
+              const send = (status: number, payload: unknown) => {
+                res.statusCode = status;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify(payload));
+              };
               try {
                 const { sentence } = JSON.parse(body || '{}');
+                // Same gate as production, so an input that 400s on the
+                // deployment doesn't silently succeed here.
+                const rejection = checkSentence(sentence);
+                if (rejection) return send(rejection.status, { error: rejection.error });
+
                 const result = await analyzeWithConfig(sentence, {
                   apiKey: env.BUILTIN_API_KEY,
                   baseUrl: env.BUILTIN_BASE_URL || 'https://api.qnaigc.com/v1',
                   model: env.BUILTIN_MODEL || 'deepseek/deepseek-v3.2-251201',
                 });
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify(result));
+                send(200, result);
               } catch (e) {
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: e instanceof Error ? e.message : 'error' }));
+                send(500, { error: e instanceof Error ? e.message : 'error' });
               }
             });
           },
