@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import Header from './components/Header';
 import InputArea, { InputAreaHandle } from './components/InputArea';
 import AnalysisResult from './components/AnalysisResult';
@@ -289,6 +290,7 @@ const App: React.FC = () => {
         initialCustomConfig={customApiConfig}
         onSave={saveSettings}
       />
+      <Analytics />
     </div>
   );
 };
